@@ -3,13 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartQuiz 題庫測驗系統</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-  </script>
+  <title>SmartQuiz 智慧題庫系統 (永久保存版)</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #f8fafc; color: #0f172a; margin: 0; padding: 16px; display: flex; justify-content: center; }
@@ -24,7 +18,7 @@
     .btn-danger { background: #ef4444; }
     .btn-secondary { background: #cbd5e1; color: #1e293b; }
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
-    .folder-item { border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; items-center; background: #fff; }
+    .folder-item { border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
     .option-btn { width: 100%; text-align: left; padding: 12px; margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; }
     .option-btn:hover { border-color: #059669; background: #f0fdf4; }
     .correct { background: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46; font-weight: bold; }
@@ -62,7 +56,7 @@
       <label style="font-size: 13px; color: #94a3b8;">選擇分類資料夾：</label>
       <select id="quiz-folder-select" style="background:#1e293b; color:white; border-color:#334155;"></select>
 
-      <label style="font-size: 13px; color: #94a3b8;">抽題數量（輸入任意數字）：</label>
+      <label style="font-size: 13px; color: #94a3b8;">抽題數量（可自行輸入數字）：</label>
       <input type="number" id="quiz-count" value="10" min="1" style="background:#1e293b; color:white; border-color:#334155;">
 
       <button class="btn" style="width: 100%; padding: 12px; font-size: 16px;" onclick="startQuiz()">🚀 開始測驗</button>
@@ -72,20 +66,16 @@
   <!-- 分頁 2：檔案上傳與解析 -->
   <div id="page-upload" class="hidden">
     <div class="card">
-      <h1>匯入題庫 (PDF / JSON / 純文字)</h1>
+      <h1>匯入題庫 (貼上 JSON 代碼)</h1>
       <label>匯入目標資料夾：</label>
-      <select id="upload-folder-target"></select>
+      <select id="upload-folder-target" onchange="renderPreview()"></select>
 
-      <label>上傳 PDF 檔 (系統將自動擷取內文)：</label>
-      <input type="file" id="file-input" accept=".pdf,.json,.txt" onchange="handleFile(event)">
+      <label>請將剛剛產生的 JSON 內容完整貼入下方：</label>
+      <textarea id="raw-text" rows="10" placeholder="請在此貼上 JSON 題目代碼..."></textarea>
 
-      <label>內文 / 純文字與 JSON 編輯區：</label>
-      <textarea id="raw-text" rows="8" placeholder="請貼上題目內容或點選上傳 PDF..."></textarea>
-
-      <button class="btn" style="width: 100%; font-size: 15px;" onclick="parseAndImport()">🔍 解析並存入題庫</button>
+      <button class="btn" style="width: 100%; font-size: 15px;" onclick="parseAndImport()">💾 儲存並永久匯入題庫</button>
     </div>
 
-    <!-- 檢視該資料夾現有題目 -->
     <div class="card">
       <h3>目前資料夾內的題目預覽</h3>
       <div id="preview-list"></div>
@@ -122,20 +112,24 @@
 </div>
 
 <script>
-  const DEFAULT_25_QUESTIONS = [
-    { stem: "下列何者最能解釋「抗病毒藥物相較於抗菌藥物種類較少」的主要原因？", options: ["病毒只能感染動物,無法進行任何代謝", "病毒複製高度依賴宿主細胞的代謝與複製機制,因此較難達到選擇性毒性", "病毒沒有任何可供藥物作用的酵素", "抗病毒藥物只能作用於病毒外殼"], answer: "B", exp: "病毒複製高度依賴宿主細胞，因此抑制病毒複製的藥物也可能傷害宿主細胞，使「選擇性毒性」較難達成。" },
-    { stem: "下列何種抗病毒藥物的作用機轉與 Acyclovir 最大的不同之處，是「不需要病毒 thymidine kinase 活化」？", options: ["Ganciclovir", "Vidarabine", "Foscarnet", "Zidovudine"], answer: "C", exp: "Foscarnet 屬於焦磷酸類似物，可直接結合並抑制 DNA 聚合酶，不需 TK 活化。" },
-    { stem: "Oseltamivir 與 Zanamivir 皆屬於神經胺酸酶抑制劑，其主要效果為何？", options: ["阻止病毒進入宿主細胞", "阻止病毒 RNA 複製", "抑制 neuraminidase，使新形成的病毒顆粒不易從感染細胞表面釋放", "直接破壞病毒 capsid"], answer: "C", exp: "抑制 Neuraminidase 可阻止切斷唾液酸受體，使成熟病毒卡在細胞表面無法釋放。" },
-    { stem: "關於 Paxlovid 治療 SARS-CoV-2 感染的作用機轉，下列何者最正確？", options: ["Nirmatrelvir 抑制 neuraminidase", "Nirmatrelvir 抑制病毒 Mpro，ritonavir 則透過抑制 CYP3A4 延長作用", "Nirmatrelvir 抑制 M2 protein", "兩種成分皆直接抑制宿主細胞 ribosome"], answer: "B", exp: "Nirmatrelvir 抑制主蛋白酶 Mpro；Ritonavir 為 PK 增強劑，透過抑制 CYP3A4 減少代謝。" },
-    { stem: "齊多夫定 (Zidovudine / AZT) 治療反轉錄病毒的作用原理為何？", options: ["破壞病毒套膜", "作為胸苷類似物，嵌入 DNA 鏈導致連鎖終止", "結合於宿主 CD4 受體", "抑制病毒顆粒組裝"], answer: "B", exp: "AZT 缺乏 3'-OH 基團，被反轉錄酶嵌入後會造成 DNA 鏈延伸終止。" }
-  ];
+  // 資料庫邏輯：優先讀取 LocalStorage，否則初始化預設資料庫
+  const STORAGE_KEY = 'SMARTQUIZ_PERMANENT_DB_V3';
 
-  let db = JSON.parse(localStorage.getItem('smartquiz_db_v2')) || {
-    "f1": { id: "f1", name: "預設病毒學高頻考點", questions: DEFAULT_25_QUESTIONS }
-  };
+  function getDB() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try { return JSON.parse(raw); } catch(e) {}
+    }
+    // 預設資料夾
+    return {
+      "f1": { id: "f1", name: "免疫與疫苗 40題庫", questions: [] }
+    };
+  }
+
+  let db = getDB();
 
   function saveDB() {
-    localStorage.setItem('smartquiz_db_v2', JSON.stringify(db));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
     renderFolders();
     updateSelects();
     renderPreview();
@@ -143,6 +137,7 @@
 
   function renderFolders() {
     const list = document.getElementById('folder-list');
+    if (!list) return;
     list.innerHTML = '';
     Object.values(db).forEach(f => {
       const div = document.createElement('div');
@@ -164,6 +159,8 @@
   function updateSelects() {
     const qSel = document.getElementById('quiz-folder-select');
     const uSel = document.getElementById('upload-folder-target');
+    if (!qSel || !uSel) return;
+
     qSel.innerHTML = '<option value="ALL">【全部資料夾混合抽題】</option>';
     uSel.innerHTML = '';
 
@@ -176,7 +173,7 @@
   function renderPreview() {
     const targetId = document.getElementById('upload-folder-target').value;
     const container = document.getElementById('preview-list');
-    if (!targetId || !db[targetId]) return;
+    if (!targetId || !db[targetId] || !container) return;
 
     const list = db[targetId].questions;
     if (list.length === 0) {
@@ -187,7 +184,7 @@
     container.innerHTML = list.map((q, i) => `
       <div class="q-preview">
         <strong>${i + 1}. ${q.stem}</strong><br>
-        A) ${q.options[0] || '無'} | B) ${q.options[1] || '無'} | C) ${q.options[2] || '無'} | D) ${q.options[3] || '無'}<br>
+        A) ${q.options[0] || ''} | B) ${q.options[1] || ''} | C) ${q.options[2] || ''} | D) ${q.options[3] || ''}<br>
         <span style="color:#059669; font-weight:bold;">答案: ${q.answer}</span>
       </div>
     `).join('');
@@ -239,95 +236,23 @@
     }
   }
 
-  // 強化版 PDF / 純文字解析邏輯
-  async function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.name.endsWith('.pdf')) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const pdfData = new Uint8Array(event.target.result);
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        let text = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        document.getElementById('raw-text').value = text;
-        alert("PDF 文字提取完成！請點擊下方的「解析並存入題庫」");
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (event) => document.getElementById('raw-text').value = event.target.result;
-      reader.readAsText(file);
-    }
-  }
-
   function parseAndImport() {
     const text = document.getElementById('raw-text').value;
     const targetId = document.getElementById('upload-folder-target').value;
-    if (!text.trim()) return alert("請輸入內容或選擇檔案！");
+    if (!text.trim()) return alert("請輸入內容！");
 
-    // 嘗試解析 JSON
     try {
       const jsonArr = JSON.parse(text);
       if (Array.isArray(jsonArr)) {
-        db[targetId].questions.push(...jsonArr);
-        saveDB();
-        alert(`成功以 JSON 格式匯入 ${jsonArr.length} 題！`);
-        return;
+        db[targetId].questions = jsonArr; // 完全覆蓋寫入，確保存檔正確
+        saveDB(); // 寫入 LocalStorage
+        alert(`成功存入 ${jsonArr.length} 題！資料已永久儲存。`);
+        document.getElementById('raw-text').value = '';
+        return showTab('dashboard');
       }
-    } catch(e) {}
-
-    // 寬鬆強化版切割法
-    const rawBlocks = text.split(/(?=\n\d+[\.、\s])/);
-    let count = 0;
-
-    rawBlocks.forEach(block => {
-      if (!block.trim()) return;
-
-      // 抓題幹
-      const stemMatch = block.match(/(?:\d+[\.、\s])?([\s\S]+?)(?=(?:\(A\)|A[\.、\)]|\(1\)))/i);
-      const stem = stemMatch ? stemMatch[1].replace(/\n/g, ' ').trim() : block.substring(0, 30).trim();
-
-      // 抓四個選項 (相容 (A) / A. / A) / (1) 各式格式)
-      const optA = block.match(/(?:\(A\)|A[\.、\)]|\(1\))([\s\S]+?)(?=(?:\(B\)|B[\.、\)]|\(2\)|$))/i)?.[1]?.trim() || "";
-      const optB = block.match(/(?:\(B\)|B[\.、\)]|\(2\))([\s\S]+?)(?=(?:\(C\)|C[\.、\)]|\(3\)|$))/i)?.[1]?.trim() || "";
-      const optC = block.match(/(?:\(C\)|C[\.、\)]|\(3\))([\s\S]+?)(?=(?:\(D\)|D[\.、\)]|\(4\)|$))/i)?.[1]?.trim() || "";
-      const optD = block.match(/(?:\(D\)|D[\.、\)]|\(4\))([\s\S]+?)(?=(?:答案|解答|詳解|\n|$))/i)?.[1]?.trim() || "";
-
-      // 抓答案
-      const ansMatch = block.match(/(?:答案|解答)[:\s]*([A-D1-4])/i);
-      let answer = "A";
-      if (ansMatch) {
-        const val = ansMatch[1].toUpperCase();
-        if (val === '1') answer = 'A';
-        else if (val === '2') answer = 'B';
-        else if (val === '3') answer = 'C';
-        else if (val === '4') answer = 'D';
-        else answer = val;
-      }
-
-      // 抓解析
-      const expMatch = block.match(/(?:詳解|解析)[:\s]*([\s\S]+)$/i);
-      const exp = expMatch ? expMatch[1].trim() : "";
-
-      if (stem && (optA || optB)) {
-        db[targetId].questions.push({
-          stem,
-          options: [optA || "選項 A", optB || "選項 B", optC || "選項 C", optD || "選項 D"],
-          answer,
-          exp
-        });
-        count++;
-      }
-    });
-
-    saveDB();
-    alert(`解析完成！成功新增 ${count} 題。請在下方預覽確認。`);
+    } catch(e) {
+      alert("JSON 格式有誤，請確認是否完整複製！");
+    }
   }
 
   // 測驗進行邏輯
@@ -414,9 +339,8 @@
     }
   }
 
-  document.getElementById('upload-folder-target').addEventListener('change', renderPreview);
-  renderFolders();
-  updateSelects();
+  // 初始化
+  saveDB();
 </script>
 
 </body>
