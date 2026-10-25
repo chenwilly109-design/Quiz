@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartQuiz Master - 互動測驗系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
+    .survey-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .option-btn { transition: all 0.2s ease; }
+    .option-btn:hover { border-color: #059669; background-color: #f0fdf4; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.showPage('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+          <i class="fa-solid font-bold fa-square-check"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 leading-tight text-lg">SmartQuiz Master</h1>
+          <p class="text-xs text-slate-500">互動測驗與題庫管理系統</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="app.showPage('dashboard')" class="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
+          <i class="fa-solid fa-folder-open mr-1"></i> 題庫與資料夾
+        </button>
+        <button onclick="app.showPage('upload')" class="px-3 py-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 上傳與解析 (PDF/JSON/TXT)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6">
+    
+    <!-- PAGE 1: DASHBOARD / FOLDER MANAGEMENT -->
+    <div id="page-dashboard" class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">題庫與分類資料夾</h2>
+          <p class="text-sm text-slate-500 mt-1">管理您的測驗資料夾，點選資料夾開始測驗或管理題目</p>
+        </div>
