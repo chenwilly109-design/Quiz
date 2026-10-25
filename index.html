@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartQuiz 智慧測驗系統</title>
-  <!-- 引入 PDF.js 庫 (用於解析 PDF 檔案) -->
+  <title>SmartQuiz 題庫測驗系統</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib) {
@@ -14,19 +13,16 @@
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #f8fafc; color: #0f172a; margin: 0; padding: 16px; display: flex; justify-content: center; }
-    .container { max-width: 720px; width: 100%; }
+    .container { max-width: 760px; width: 100%; }
     .nav { display: flex; gap: 8px; margin-bottom: 16px; }
-    .nav-btn { flex: 1; padding: 10px; background: #e2e8f0; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; color: #475569; }
+    .nav-btn { flex: 1; padding: 10px; background: #cbd5e1; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; color: #334155; }
     .nav-btn.active { background: #059669; color: white; }
     .card { background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
     h1 { font-size: 20px; margin-top: 0; }
     h3 { font-size: 16px; line-height: 1.5; margin-top: 0; }
     .btn { background: #059669; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
-    .btn:hover { background: #047857; }
     .btn-danger { background: #ef4444; }
-    .btn-danger:hover { background: #dc2626; }
     .btn-secondary { background: #cbd5e1; color: #1e293b; }
-    .btn-secondary:hover { background: #94a3b8; }
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
     .folder-item { border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; items-center; background: #fff; }
     .option-btn { width: 100%; text-align: left; padding: 12px; margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; }
@@ -38,6 +34,7 @@
     .hidden { display: none; }
     .explanation { background: #f8fafc; border-left: 4px solid #059669; padding: 12px; margin: 12px 0; font-size: 14px; color: #334155; }
     input, select, textarea { width: 100%; padding: 10px; margin: 6px 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+    .q-preview { border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; background: #f1f5f9; }
   </style>
 </head>
 <body>
@@ -45,8 +42,8 @@
 <div class="container">
   <!-- 導覽列 -->
   <div class="nav">
-    <button class="nav-btn active" id="nav-dash" onclick="showTab('dashboard')">📁 題庫與資料夾</button>
-    <button class="nav-btn" id="nav-upload" onclick="showTab('upload')">📤 上傳/解析題庫</button>
+    <button class="nav-btn active" id="nav-dash" onclick="showTab('dashboard')">📁 資料夾與測驗</button>
+    <button class="nav-btn" id="nav-upload" onclick="showTab('upload')">📤 上傳與匯入題庫</button>
   </div>
 
   <!-- 分頁 1：資料夾與測驗設定 -->
@@ -65,7 +62,7 @@
       <label style="font-size: 13px; color: #94a3b8;">選擇分類資料夾：</label>
       <select id="quiz-folder-select" style="background:#1e293b; color:white; border-color:#334155;"></select>
 
-      <label style="font-size: 13px; color: #94a3b8;">抽題數量（可自行輸入任意數字）：</label>
+      <label style="font-size: 13px; color: #94a3b8;">抽題數量（輸入任意數字）：</label>
       <input type="number" id="quiz-count" value="10" min="1" style="background:#1e293b; color:white; border-color:#334155;">
 
       <button class="btn" style="width: 100%; padding: 12px; font-size: 16px;" onclick="startQuiz()">🚀 開始測驗</button>
@@ -75,17 +72,24 @@
   <!-- 分頁 2：檔案上傳與解析 -->
   <div id="page-upload" class="hidden">
     <div class="card">
-      <h1>匯入新題庫</h1>
+      <h1>匯入題庫 (PDF / JSON / 純文字)</h1>
       <label>匯入目標資料夾：</label>
       <select id="upload-folder-target"></select>
 
-      <label>選擇檔案上傳 (支援 PDF / JSON / TXT)：</label>
+      <label>上傳 PDF 檔 (系統將自動擷取內文)：</label>
       <input type="file" id="file-input" accept=".pdf,.json,.txt" onchange="handleFile(event)">
 
-      <label>或直接貼上題目純文字內容：</label>
-      <textarea id="raw-text" rows="6" placeholder="例如：&#10;1. 題目內容...&#10;(A) 選項一&#10;(B) 選項二&#10;答案: B&#10;解析: 詳細說明..."></textarea>
+      <label>內文 / 純文字與 JSON 編輯區：</label>
+      <textarea id="raw-text" rows="8" placeholder="請貼上題目內容或點選上傳 PDF..."></textarea>
 
-      <button class="btn" style="width: 100%;" onclick="parseAndImport()">解析並存入題庫</button>
+      <button class="btn" style="width: 100%; font-size: 15px;" onclick="parseAndImport()">🔍 解析並存入題庫</button>
+    </div>
+
+    <!-- 檢視該資料夾現有題目 -->
+    <div class="card">
+      <h3>目前資料夾內的題目預覽</h3>
+      <div id="preview-list"></div>
+      <button class="btn btn-danger" style="margin-top:10px;" onclick="clearTargetFolder()">清空該資料夾題目</button>
     </div>
   </div>
 
@@ -118,44 +122,23 @@
 </div>
 
 <script>
-  // 預設 25 題庫數據
   const DEFAULT_25_QUESTIONS = [
     { stem: "下列何者最能解釋「抗病毒藥物相較於抗菌藥物種類較少」的主要原因？", options: ["病毒只能感染動物,無法進行任何代謝", "病毒複製高度依賴宿主細胞的代謝與複製機制,因此較難達到選擇性毒性", "病毒沒有任何可供藥物作用的酵素", "抗病毒藥物只能作用於病毒外殼"], answer: "B", exp: "病毒複製高度依賴宿主細胞，因此抑制病毒複製的藥物也可能傷害宿主細胞，使「選擇性毒性」較難達成。" },
     { stem: "下列何種抗病毒藥物的作用機轉與 Acyclovir 最大的不同之處，是「不需要病毒 thymidine kinase 活化」？", options: ["Ganciclovir", "Vidarabine", "Foscarnet", "Zidovudine"], answer: "C", exp: "Foscarnet 屬於焦磷酸類似物，可直接結合並抑制 DNA 聚合酶，不需 TK 活化。" },
-    { stem: "HIV 感染患者接受 protease inhibitor 治療時，為何通常需要與其他抗病毒藥物合併使用？", options: ["因為 protease inhibitor 無法進入細胞", "因為單獨使用容易產生抗藥性", "因為只能作用於細菌", "因為會直接破壞宿主 DNA"], answer: "B", exp: "Protease inhibitor 單獨使用極易產生抗藥性，故需合併使用。" },
     { stem: "Oseltamivir 與 Zanamivir 皆屬於神經胺酸酶抑制劑，其主要效果為何？", options: ["阻止病毒進入宿主細胞", "阻止病毒 RNA 複製", "抑制 neuraminidase，使新形成的病毒顆粒不易從感染細胞表面釋放", "直接破壞病毒 capsid"], answer: "C", exp: "抑制 Neuraminidase 可阻止切斷唾液酸受體，使成熟病毒卡在細胞表面無法釋放。" },
     { stem: "關於 Paxlovid 治療 SARS-CoV-2 感染的作用機轉，下列何者最正確？", options: ["Nirmatrelvir 抑制 neuraminidase", "Nirmatrelvir 抑制病毒 Mpro，ritonavir 則透過抑制 CYP3A4 延長作用", "Nirmatrelvir 抑制 M2 protein", "兩種成分皆直接抑制宿主細胞 ribosome"], answer: "B", exp: "Nirmatrelvir 抑制主蛋白酶 Mpro；Ritonavir 為 PK 增強劑，透過抑制 CYP3A4 減少代謝。" },
-    { stem: "金剛乙胺(Rimantadine)是用於阻止何種類型的感冒？", options: ["A型流行感冒", "B型流行感冒", "C型流行感冒", "以上皆可以"], answer: "A", exp: "金剛乙胺僅針對 A 型流感有效，對 B、C 型無效。" },
-    { stem: "金剛乙胺(Rimantadine)的抗病毒機制為何？", options: ["干擾病毒合成蛋白質", "阻斷 M2 離子通道，干擾病毒脫殼與組裝", "干擾病毒合成 DNA", "抑制反轉錄酶"], answer: "B", exp: "阻斷 M2 質子通道，使病毒內部無法酸化，進而抑制脫殼與組裝。" },
-    { stem: "下列有關抗 HIV 藥物及其作用機轉配對，何者錯誤？", options: ["Saquinavir 是蛋白酶抑制劑", "Lamivudine 是反轉錄酶抑制劑", "Nevirapine 是嵌入酶(integrase)抑制劑", "Maraviroc 是 CCR5 共同接受器拮抗劑"], answer: "C", exp: "Nevirapine 屬於非核苷類反轉錄酶抑制劑 (NNRTI)，非嵌入酶抑制劑。" },
-    { stem: "下列抗病毒藥物中，何者可對抗 HIV 病毒，用於治療愛滋病？", options: ["amantadine", "ganciclovir", "acyclovir", "zidovudine"], answer: "D", exp: "Zidovudine (AZT) 為 NRTI 類反轉錄酶抑制劑。" },
-    { stem: "抗病毒藥物 acyclovir 的作用機轉為何？", options: ["抑制 DNA 的合成", "抑制蛋白質的合成", "抑制細胞膜的合成", "抑制細胞壁的合成"], answer: "A", exp: "競爭性抑制病毒 DNA polymerase 並作為鏈終止劑，阻斷 DNA 合成。" },
-    { stem: "下列何種微生物不是人類的絕對病原體(strict pathogens)？", options: ["Staphylococcus aureus", "Rabies virus", "Neisseria gonorrhoeae", "Mycobacterium tuberculosis"], answer: "A", exp: "金黃色葡萄球菌常存在於皮膚與鼻腔，屬於常見正常菌叢與機會性病原體。" },
-    { stem: "抗流感病毒藥品的主要作用機制為何？", options: ["基質蛋白抑制劑", "核衣殼蛋白抑制劑", "神經胺酸酶抑制劑", "血球凝集素抑制劑"], answer: "C", exp: "克流感與瑞樂沙均屬於神經胺酸酶抑制劑 (NAI)。" },
-    { stem: "當呼吸道的上皮細胞被流感病毒感染後，下列何種免疫細胞可分泌 interferon alpha/beta？", options: ["cytotoxic T lymphocyte", "type 1 conventional dendritic cell", "type 2 conventional dendritic cell", "plasmacytoid dendritic cell"], answer: "D", exp: "漿細胞樣樹突細胞 (pDC) 是大量分泌 I 型干擾素的最主要細胞。" },
-    { stem: "對於家禽流行性感冒病毒之敘述，何者正確？", options: ["為無套膜之雙股 DNA 病毒", "遺傳物質為正向單股 RNA", "屬於 B 型流感病毒", "為有套膜之單股 RNA 病毒，對熱與消毒劑敏感"], answer: "D", exp: "禽流感屬於 A 型流感，具套膜且遺傳物質為負向單股 RNA，對熱與脂溶劑敏感。" },
-    { stem: "診斷馬立克病可使用免疫螢光染色檢測雞何處細胞中的抗原？", options: ["毛囊上皮細胞", "法氏囊 B 細胞", "關節腱鞘細胞", "腎臟上皮細胞"], answer: "A", exp: "馬立克病病毒會在羽毛囊上皮細胞大量複製並形成病毒顆粒。" },
-    { stem: "下列那一組織不是假性狂犬病病毒潛伏之主要感染部位？", options: ["三叉神經節", "下視丘", "薦神經節", "扁桃腺"], answer: "B", exp: "假性狂犬病病毒 (PRV) 潛伏於三叉、薦神經節與扁桃腺，不包含下視丘。" },
-    { stem: "馬立克病活毒減毒疫苗株 SB-1 是屬於何種血清型？", options: ["第 1 型", "第 2 型", "第 3 型", "第 4 型"], answer: "B", exp: "SB-1 屬於無致腫瘤性的自然分離株 MDV-2 (第 2 型)。" },
-    { stem: "家禽傳染性支氣管炎病毒 (IBV) 分類歸屬為何？", options: ["Alphacoronavirus", "Gammacoronavirus", "Betacoronavirus", "Deltacoronavirus"], answer: "B", exp: "IBV 屬於 Gammacoronavirus (γ 冠狀病毒屬)。" },
-    { stem: "貓因疱疹病毒 (FHV-1) 感染引發結膜炎，常併發哪一系統疾病？", options: ["胃炎", "上呼吸道疾病", "腸炎", "肺炎"], answer: "B", exp: "FHV-1 主要是感染結膜與上呼吸道，引發貓病毒性鼻氣管炎。" },
-    { stem: "關於減毒活病毒疫苗與不活化疫苗比較，何者正確？", options: ["減毒活疫苗完全無法複製", "不活化疫苗可在體內持續複製", "減毒活疫苗通常能誘發較完整的體液與細胞性免疫", "不活化疫苗具有恢復毒力風險"], answer: "C", exp: "減毒活疫苗可在體內適度複製，因此能誘發較完整的體液與 T 細胞免疫。" },
-    { stem: "關於被動免疫 (Passive immunity) 的敘述，何者正確？", options: ["主要透過活化宿主 B 細胞", "可快速提供保護但保護效果較短暫", "能誘導長期免疫記憶", "必須施打減毒疫苗"], answer: "B", exp: "被動免疫直接給予抗體，作用迅速但無免疫記憶，維護時間較短。" },
-    { stem: "關於疫苗佐劑 (Adjuvant) 的功能，下列何者正確？", options: ["直接殺死病毒", "完全取代抗原", "能夠增強宿主對疫苗抗原的免疫反應", "只能用於活疫苗"], answer: "C", exp: "佐劑主要功能為增強抗原呈現與免疫反應強度。" },
-    { stem: "高風險病毒暴露後採用「被動-主動聯合免疫」之目的為何？", options: ["兼具「預防空窗期的適時保護」與「建立長期主動記憶」", "僅施打被動免疫球蛋白", "專指給予抗生素結合干擾素", "兩者會相互破壞禁止聯合使用"], answer: "A", exp: "免疫球蛋白提供即時中和保護，疫苗可刺激自體產生長期主動免疫。" },
-    { stem: "齊多夫定 (Zidovudine / AZT) 治療反轉錄病毒的作用原理為何？", options: ["破壞病毒套膜", "作為胸苷類似物，嵌入 DNA 鏈導致連鎖終止", "結合於宿主 CD4 受體", "抑制病毒顆粒組裝"], answer: "B", exp: "AZT 缺乏 3'-OH 基團，被反轉錄酶嵌入後會造成 DNA 鏈延伸終止。" },
-    { stem: "對 Acyclovir 產生抗藥性之缺 TK 病毒株，可改用何種焦磷酸類似物？", options: ["磷甲酸鈉 (Foscarnet)", "碘苷 (Idoxuridine)", "司他夫定 (Stavudine)", "拉米夫定 (Lamivudine)"], answer: "A", exp: "Foscarnet 不需病毒 TK 活化，可直接抑制 DNA 聚合酶。" }
+    { stem: "齊多夫定 (Zidovudine / AZT) 治療反轉錄病毒的作用原理為何？", options: ["破壞病毒套膜", "作為胸苷類似物，嵌入 DNA 鏈導致連鎖終止", "結合於宿主 CD4 受體", "抑制病毒顆粒組裝"], answer: "B", exp: "AZT 缺乏 3'-OH 基團，被反轉錄酶嵌入後會造成 DNA 鏈延伸終止。" }
   ];
 
-  // 資料庫初始化 (LocalStorage 永久儲存)
-  let db = JSON.parse(localStorage.getItem('smartquiz_folders')) || {
-    "f1": { id: "f1", name: "病毒學高頻考點 (預設25題)", questions: DEFAULT_25_QUESTIONS }
+  let db = JSON.parse(localStorage.getItem('smartquiz_db_v2')) || {
+    "f1": { id: "f1", name: "預設病毒學高頻考點", questions: DEFAULT_25_QUESTIONS }
   };
 
   function saveDB() {
-    localStorage.setItem('smartquiz_folders', JSON.stringify(db));
+    localStorage.setItem('smartquiz_db_v2', JSON.stringify(db));
     renderFolders();
     updateSelects();
+    renderPreview();
   }
 
   function renderFolders() {
@@ -190,8 +173,28 @@
     });
   }
 
+  function renderPreview() {
+    const targetId = document.getElementById('upload-folder-target').value;
+    const container = document.getElementById('preview-list');
+    if (!targetId || !db[targetId]) return;
+
+    const list = db[targetId].questions;
+    if (list.length === 0) {
+      container.innerHTML = '<p style="color:#94a3b8; font-size:13px;">該資料夾目前沒有題目。</p>';
+      return;
+    }
+
+    container.innerHTML = list.map((q, i) => `
+      <div class="q-preview">
+        <strong>${i + 1}. ${q.stem}</strong><br>
+        A) ${q.options[0] || '無'} | B) ${q.options[1] || '無'} | C) ${q.options[2] || '無'} | D) ${q.options[3] || '無'}<br>
+        <span style="color:#059669; font-weight:bold;">答案: ${q.answer}</span>
+      </div>
+    `).join('');
+  }
+
   function addFolder() {
-    const name = prompt("請輸入新資料夾/科目名稱：");
+    const name = prompt("請輸入新資料夾名稱：");
     if (name && name.trim()) {
       const id = 'f_' + Date.now();
       db[id] = { id, name: name.trim(), questions: [] };
@@ -200,17 +203,19 @@
   }
 
   function renameFolder(id) {
-    const newName = prompt("請輸入新的名稱：", db[id].name);
-    if (newName && newName.trim()) {
-      db[id].name = newName.trim();
-      saveDB();
-    }
+    const newName = prompt("請輸入新名稱：", db[id].name);
+    if (newName && newName.trim()) { db[id].name = newName.trim(); saveDB(); }
   }
 
   function deleteFolder(id) {
     if (Object.keys(db).length <= 1) return alert("至少需保留一個資料夾！");
-    if (confirm(`確定要刪除「${db[id].name}」資料夾嗎？`)) {
-      delete db[id];
+    if (confirm(`確定刪除「${db[id].name}」？`)) { delete db[id]; saveDB(); }
+  }
+
+  function clearTargetFolder() {
+    const targetId = document.getElementById('upload-folder-target').value;
+    if (confirm("確定要清空這個資料夾裡的所有題目嗎？")) {
+      db[targetId].questions = [];
       saveDB();
     }
   }
@@ -230,10 +235,11 @@
     } else if (tab === 'upload') {
       document.getElementById('page-upload').classList.remove('hidden');
       document.getElementById('nav-upload').classList.add('active');
+      renderPreview();
     }
   }
 
-  // 檔案上傳與 PDF 解析
+  // 強化版 PDF / 純文字解析邏輯
   async function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -250,7 +256,7 @@
           text += content.items.map(item => item.str).join(' ') + '\n';
         }
         document.getElementById('raw-text').value = text;
-        alert("PDF 內文成功擷取！請點擊「解析並存入題庫」");
+        alert("PDF 文字提取完成！請點擊下方的「解析並存入題庫」");
       };
       reader.readAsArrayBuffer(file);
     } else {
@@ -263,48 +269,68 @@
   function parseAndImport() {
     const text = document.getElementById('raw-text').value;
     const targetId = document.getElementById('upload-folder-target').value;
-    if (!text.trim()) return alert("請貼上文字或選擇檔案！");
+    if (!text.trim()) return alert("請輸入內容或選擇檔案！");
 
+    // 嘗試解析 JSON
     try {
       const jsonArr = JSON.parse(text);
       if (Array.isArray(jsonArr)) {
         db[targetId].questions.push(...jsonArr);
         saveDB();
-        alert(`成功匯入 ${jsonArr.length} 題 JSON 格式題目！`);
-        return showTab('dashboard');
+        alert(`成功以 JSON 格式匯入 ${jsonArr.length} 題！`);
+        return;
       }
     } catch(e) {}
 
-    // 文字解析規律 (智慧提取)
-    const blocks = text.split(/\n(?=\d+[\.、\s])/);
+    // 寬鬆強化版切割法
+    const rawBlocks = text.split(/(?=\n\d+[\.、\s])/);
     let count = 0;
-    blocks.forEach(block => {
+
+    rawBlocks.forEach(block => {
       if (!block.trim()) return;
-      const stemMatch = block.match(/(?:\d+[\.、\s])?([\s\S]+?)(?=\(A\)|A[\.、])/);
-      const stem = stemMatch ? stemMatch[1].trim() : block.substring(0, 40).trim();
 
-      const optA = block.match(/\(A\)([\s\S]+?)(?=\(B\)|B[\.、]|$)/)?.[1]?.trim() || "選項 A";
-      const optB = block.match(/\(B\)([\s\S]+?)(?=\(C\)|C[\.、]|$)/)?.[1]?.trim() || "選項 B";
-      const optC = block.match(/\(C\)([\s\S]+?)(?=\(D\)|D[\.、]|$)/)?.[1]?.trim() || "選項 C";
-      const optD = block.match(/\(D\)([\s\S]+?)(?=答案|詳解|$)/)?.[1]?.trim() || "選項 D";
+      // 抓題幹
+      const stemMatch = block.match(/(?:\d+[\.、\s])?([\s\S]+?)(?=(?:\(A\)|A[\.、\)]|\(1\)))/i);
+      const stem = stemMatch ? stemMatch[1].replace(/\n/g, ' ').trim() : block.substring(0, 30).trim();
 
-      const ansMatch = block.match(/(?:答案|解答)[:\s]*([A-D])/i);
-      const answer = ansMatch ? ansMatch[1].toUpperCase() : "A";
+      // 抓四個選項 (相容 (A) / A. / A) / (1) 各式格式)
+      const optA = block.match(/(?:\(A\)|A[\.、\)]|\(1\))([\s\S]+?)(?=(?:\(B\)|B[\.、\)]|\(2\)|$))/i)?.[1]?.trim() || "";
+      const optB = block.match(/(?:\(B\)|B[\.、\)]|\(2\))([\s\S]+?)(?=(?:\(C\)|C[\.、\)]|\(3\)|$))/i)?.[1]?.trim() || "";
+      const optC = block.match(/(?:\(C\)|C[\.、\)]|\(3\))([\s\S]+?)(?=(?:\(D\)|D[\.、\)]|\(4\)|$))/i)?.[1]?.trim() || "";
+      const optD = block.match(/(?:\(D\)|D[\.、\)]|\(4\))([\s\S]+?)(?=(?:答案|解答|詳解|\n|$))/i)?.[1]?.trim() || "";
 
+      // 抓答案
+      const ansMatch = block.match(/(?:答案|解答)[:\s]*([A-D1-4])/i);
+      let answer = "A";
+      if (ansMatch) {
+        const val = ansMatch[1].toUpperCase();
+        if (val === '1') answer = 'A';
+        else if (val === '2') answer = 'B';
+        else if (val === '3') answer = 'C';
+        else if (val === '4') answer = 'D';
+        else answer = val;
+      }
+
+      // 抓解析
       const expMatch = block.match(/(?:詳解|解析)[:\s]*([\s\S]+)$/i);
       const exp = expMatch ? expMatch[1].trim() : "";
 
-      db[targetId].questions.push({ stem, options: [optA, optB, optC, optD], answer, exp });
-      count++;
+      if (stem && (optA || optB)) {
+        db[targetId].questions.push({
+          stem,
+          options: [optA || "選項 A", optB || "選項 B", optC || "選項 C", optD || "選項 D"],
+          answer,
+          exp
+        });
+        count++;
+      }
     });
 
     saveDB();
-    alert(`成功解析並新增 ${count} 道題目！`);
-    document.getElementById('raw-text').value = '';
-    showTab('dashboard');
+    alert(`解析完成！成功新增 ${count} 題。請在下方預覽確認。`);
   }
 
-  // 測驗引擎
+  // 測驗進行邏輯
   let currentQuestions = [];
   let currentIndex = 0;
   let score = 0;
@@ -320,7 +346,7 @@
       pool = [...db[targetFolder].questions];
     }
 
-    if (pool.length === 0) return alert("此資料夾沒有題目！請先匯入題目。");
+    if (pool.length === 0) return alert("這個資料夾沒有題目，請先上傳題庫！");
 
     currentQuestions = pool.sort(() => Math.random() - 0.5).slice(0, count);
     currentIndex = 0;
@@ -339,8 +365,7 @@
     document.getElementById('question-stem').innerText = `${currentIndex + 1}. ${q.stem}`;
     
     document.getElementById('explanation-box').classList.add('hidden');
-    const nextBtn = document.getElementById('next-btn');
-    nextBtn.disabled = true;
+    document.getElementById('next-btn').disabled = true;
 
     const container = document.getElementById('options-container');
     container.innerHTML = '';
@@ -367,7 +392,7 @@
     } else {
       btn.classList.add('wrong');
       const keys = ['A', 'B', 'C', 'D'];
-      btns[keys.indexOf(q.answer)].classList.add('correct');
+      btns[keys.indexOf(q.answer)]?.classList.add('correct');
     }
 
     if (q.exp) {
@@ -389,7 +414,7 @@
     }
   }
 
-  // 初始化畫面
+  document.getElementById('upload-folder-target').addEventListener('change', renderPreview);
   renderFolders();
   updateSelects();
 </script>
