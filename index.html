@@ -3,52 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartQuiz Master - 互動測驗系統</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
+  <title>病毒學與抗病毒藥物線上測驗</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
-    .survey-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .option-btn { transition: all 0.2s ease; }
-    .option-btn:hover { border-color: #059669; background-color: #f0fdf4; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f1f5f9; color: #0f172a; margin: 0; padding: 16px; display: flex; justify-content: center; }
+    .container { max-width: 680px; width: 100%; }
+    .card { background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
+    h1 { font-size: 20px; margin-top: 0; color: #0f172a; }
+    h3 { font-size: 16px; line-height: 1.5; color: #1e293b; margin-top: 0; }
+    .btn { background: #059669; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 15px; width: 100%; transition: 0.2s; }
+    .btn:hover { background: #047857; }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .option-btn { width: 100%; text-align: left; padding: 14px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; line-height: 1.4; transition: 0.2s; }
+    .option-btn:hover { border-color: #059669; background: #f0fdf4; }
+    .correct { background: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46; font-weight: bold; }
+    .wrong { background: #fef2f2 !important; border-color: #ef4444 !important; color: #991b1b; }
+    .progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 12px 0 20px; }
+    .progress-fill { background: #059669; height: 100%; width: 0%; transition: width 0.3s; }
+    .hidden { display: none; }
+    .explanation { background: #f8fafc; border-left: 4px solid #059669; padding: 12px; margin: 16px 0; font-size: 14px; color: #334155; line-height: 1.5; }
+    input[type="number"] { width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; }
   </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body>
 
-  <!-- Header -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.showPage('dashboard')">
-        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-          <i class="fa-solid font-bold fa-square-check"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-slate-900 leading-tight text-lg">SmartQuiz Master</h1>
-          <p class="text-xs text-slate-500">互動測驗與題庫管理系統</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="app.showPage('dashboard')" class="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
-          <i class="fa-solid fa-folder-open mr-1"></i> 題庫與資料夾
-        </button>
-        <button onclick="app.showPage('upload')" class="px-3 py-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition">
-          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 上傳與解析 (PDF/JSON/TXT)
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6">
+<div class="container">
+  <!-- 頁面 1：設定頁面 -->
+  <div id="page-dashboard" class="card">
+    <h1>病毒學高頻考點測驗 (25題庫)</h1>
+    <p style="font-size: 14px; color: #64748b; line-height: 1.5;">包含 Acyclovir、Oseltamivir、Foscarnet、Paxlovid 等藥物機轉與免疫考點。</p>
     
-    <!-- PAGE 1: DASHBOARD / FOLDER MANAGEMENT -->
-    <div id="page-dashboard" class="space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 class="text-xl font-bold text-slate-900">題庫與分類資料夾</h2>
-          <p class="text-sm text-slate-500 mt-1">管理您的測驗資料夾，點選資料夾開始測驗或管理題目</p>
-        </div>
+    <label style="font-size: 14px; font-weight: 600;">請輸入想要抽取的題目數量：</label>
+    <input type="number" id="quiz-count" value="10" min="1" max="25">
+    
+    <button class="btn" onclick="startQuiz()">開始測驗</button>
+  </div>
+
+  <!-- 頁面 2：測驗進行頁面 -->
+  <div id="page-quiz" class="card hidden">
+    <div style="display: flex; justify-content: space-between; font-size: 13px; color: #64748b; font-weight: 600;">
+      <span id="quiz-progress-text">第 1 題 / 共 10 題</span>
+      <span id="quiz-score-text">目前得分: 0</span>
+    </div>
+    <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+
+    <h3 id="question-stem">題目載入中...</h3>
+    <div id="options-container"></div>
+
+    <div id="explanation-box" class="explanation hidden">
+      <strong>【考點解析】</strong> <span id="explanation-text"></span>
+    </div>
+
+    <button id="next-btn" class="btn" onclick="nextQuestion()" disabled>下一題</button>
+  </div>
+
+  <!-- 頁面 3：結算頁面 -->
+  <div id="page-results" class="card hidden" style="text-align: center;">
+    <h1>🎉 測驗完成！</h1>
+    <p style="font-size: 14px; color: #64748b;">您的最終成績為：</p>
+    <p style="font-size: 32px; font-weight: bold; color: #059669; margin: 12px 0;" id="final-score">0 / 0</p>
+    <button class="btn" onclick="location.reload()">再測驗一次</button>
+  </div>
+</div>
+
+<script>
+  const QUESTIONS = [
+    { stem: "下列何者最能解釋「抗病毒藥物相較於抗菌藥物種類較少」的主要原因？", options: ["病毒只能感染動物,無法進行任何代謝", "病毒複製高度依賴宿主細胞的代謝與複製機制,因此較難達到選擇性毒性", "病毒沒有任何可供藥物作用的酵素", "抗病毒藥物只能作用於病毒外殼"], answer: "B", exp: "病毒複製高度依賴宿主細胞，因此抑制病毒複製的藥物也可能傷害宿主細胞，使「選擇性毒性」較難達成。" },
+    { stem: "下列何種抗病毒藥物的作用機轉與 Acyclovir 最大的不同之處，是「不需要病毒 thymidine kinase 活化」？", options: ["Ganciclovir", "Vidarabine", "Foscarnet", "Zidovudine"], answer: "C", exp: "Foscarnet 屬於焦磷酸類似物 (pyrophosphate analogue)，可直接結合並抑制 DNA 聚合酶，不需 TK 活化。" },
+    { stem: "HIV 感染患者接受 protease inhibitor 治療時，為何通常需要與其他抗病毒藥物合併使用？", options: ["因為 protease inhibitor 無法進入細胞", "因為單獨使用容易產生抗藥性", "因為只能作用於細菌", "因為會直接破壞宿主 DNA"], answer: "B", exp: "Protease inhibitor 單獨使用極易產生抗藥性，故需實施雞尾酒療法合併使用。" },
+    { stem: "Oseltamivir 與 Zanamivir 皆屬於神經胺酸酶抑制劑，其主要效果為何？", options: ["阻止病毒進入宿主細胞", "阻止病毒 RNA polymerase 複製", "抑制 neuraminidase，使新形成的病毒顆粒不易從感染細胞表面釋放", "直接破壞病毒 capsid"], answer: "C", exp: "抑制 Neuraminidase 可阻止切斷唾液酸受體，使成熟病毒卡在細胞表面無法釋放。" },
+    { stem: "關於 Paxlovid 治療 SARS-CoV-2 感染的作用機轉，下列何者最正確？", options: ["Nirmatrelvir 抑制 neuraminidase", "Nirmatrelvir 抑制病毒 Mpro，ritonavir 則透過抑制 CYP3A4 延長作用", "Nirmatrelvir 抑制 M2 protein", "兩種成分皆直接抑制宿主細胞 ribosome"], answer: "B", exp: "Nirmatrelvir 抑制主蛋白酶 Mpro；Ritonavir 為 PK 增強劑，透過抑制 CYP3A4 減少代謝。" },
+    { stem: "金剛乙胺(Rimantadine)是用於阻止何種類型的感冒？", options: ["A型流行感冒", "B型流行感冒", "C型流行感冒", "以上皆可以"], answer: "A", exp: "金剛乙胺僅針對 A 型流感有效，對 B、C 型無效。" },
+    { stem: "金剛乙胺(Rimantadine)的抗病毒機制為何？", options: ["干擾病毒合成蛋白質", "阻斷 M2 離子通道，干擾病毒脫殼與組裝", "干擾病毒合成 DNA", "抑制反轉錄酶"], answer: "B", exp: "阻斷 M2 質子通道，使病毒內部無法酸化，進而抑制脫殼與組裝。" },
+    { stem: "下列有關抗 HIV 藥物及其作用機轉配對，何者錯誤？", options: ["Saquinavir 是蛋白酶抑制劑", "Lamivudine 是反轉錄酶抑制劑", "Nevirapine 是嵌入酶(integrase)抑制劑", "Maraviroc 是 CCR5 共同接受器拮抗劑"], answer: "C", exp: "Nevirapine 屬於非核苷類反轉錄酶抑制劑 (NNRTI)，並非嵌入酶抑制劑。" },
+    { stem: "下列抗病毒藥物中，何者可對抗 HIV 病毒，用於治療愛滋病？", options: ["amantadine", "ganciclovir", "acyclovir", "zidovudine"], answer: "D", exp: "Zidovudine (AZT) 為 NRTI 類反轉錄酶抑制劑。" },
+    { stem: "抗病毒藥物 acyclovir 的作用機轉為何？", options: ["抑制 DNA 的合成", "抑制蛋白質的合成", "抑制細胞膜的合成", "抑制細胞壁的合成"], answer: "A", exp: "競爭性抑制病毒 DNA polymerase 並作為鏈終止劑，阻斷病毒 DNA 合成。" },
+    { stem: "下列何種微生物不是人類的絕對病原體(strict pathogens)？", options: ["Staphylococcus aureus", "Rabies virus", "Neisseria gonorrhoeae", "Mycobacterium tuberculosis"], answer: "A", exp: "金黃色葡萄球菌常存在於皮膚與鼻腔，屬於常見正常菌叢與機會性病原體。" },
+    { stem: "抗流感病毒藥品的主要作用機制為何？", options: ["基質蛋白抑制劑", "核衣殼蛋白抑制劑", "神經胺酸酶抑制劑", "血球凝集素抑制劑"], answer: "C", exp: "克流感與瑞樂沙均屬於神經胺酸酶抑制劑 (NAI)。" },
+    { stem: "當呼吸道的上皮細胞被流感病毒感染後，下列何種免疫細胞可分泌 interferon alpha/beta？", options: ["cytotoxic T lymphocyte", "type 1 conventional dendritic cell", "type 2 conventional dendritic cell", "plasmacytoid dendritic cell"], answer: "D", exp: "漿細胞樣樹突細胞 (pDC) 是大量分泌 I 型干擾素的最主要細胞。" },
+    { stem: "對於家禽流行性感冒病毒之敘述，何者正確？", options: ["為無套膜之雙股 DNA 病毒", "遺傳物質為正向單股 RNA", "屬於 B 型流感病毒", "為有套膜之單股 RNA 病毒，對熱與消毒劑敏感"], answer: "D", exp: "禽流感屬於 A 型流感，具套膜且遺傳物質為負向單股 RNA，對熱與脂溶劑敏感。" },
+    { stem: "診斷馬立克病可使用免疫螢光染色檢測雞何處細胞中的抗原？", options: ["毛囊上皮細胞", "法氏囊 B 細胞", "關節腱鞘細胞", "腎臟上皮細胞"], answer: "A", exp: "馬立克病病毒會在羽毛囊上皮細胞大量複製並形成病毒顆粒。" },
+    { stem: "下列那一組織不是假性狂犬病病毒潛伏之主要感染部位？", options: ["三叉神經節", "下視丘", "薦神經節", "扁桃腺"], answer: "B", exp: "假性狂犬病病毒 (PRV) 潛伏於三叉、薦神經節與扁桃腺，不包含下視丘。" },
+    { stem: "馬立克病活毒減毒疫苗株 SB-1 是屬於何種血清型？", options: ["第 1 型", "第 2 型", "第 3 型", "第 4 型"], answer: "B", exp: "SB-1 屬於無致腫瘤性的自然分離株 MDV-2 (第 2 型)。" },
+    { stem: "家禽傳染性支氣管炎病毒 (IBV) 分類歸屬為何？", options: ["Alphacoronavirus", "Gammacoronavirus", "Betacoronavirus", "Deltacoronavirus"], answer: "B", exp: "IBV 屬於 Gammacoronavirus (γ 冠狀病毒屬)。" },
+    { stem: "貓因疱疹病毒 (FHV-1) 感染引發結膜炎，常併發哪一系統疾病？", options: ["胃炎", "上呼吸道疾病", "腸炎", "肺炎"], answer: "B", exp: "FHV-1 主要是感染結膜與上呼吸道，引發貓病毒性鼻氣管炎。" },
+    { stem: "關於減毒活病毒疫苗與不活化疫苗比較，何者正確？", options: ["減毒活疫苗完全無法複製", "不活化疫苗可在體內持續複製", "減毒活疫苗通常能誘發較完整的體液與細胞性免疫", "不活化疫苗具有恢復毒力風險"], answer: "C", exp: "減毒活疫苗可在體內適度複製，因此能誘發較完整的體液與 T 細胞免疫。" },
+    { stem: "關於被動免疫 (Passive immunity) 的敘述，何者正確？", options: ["主要透過活化宿主 B 細胞", "可快速提供保護但保護效果較短暫", "能誘導長期免疫記憶", "必須施打減毒疫苗"], answer: "B", exp: "被動免疫直接給予抗體，作用迅速但無免疫記憶，維護時間較短。" },
+    { stem: "關於疫苗佐劑 (Adjuvant) 的功能，下列何者正確？", options: ["直接殺死病毒", "完全取代抗原", "能夠增強宿主對疫苗抗原的免疫反應", "只能用於活疫苗"], answer: "C", exp: "佐劑主要功能為增強抗原呈現與免疫反應強度。" },
+    { stem: "高風險病毒暴露後採用「被動-主動聯合免疫」之目的為何？", options: ["兼具「預防空窗期的立即保護」與「建立長期主動記憶」", "僅施打被動免疫球蛋白", "專指給予抗生素結合干擾素", "兩者會相互破壞禁止聯合使用"], answer: "A", exp: "免疫球蛋白提供即時中和保護，疫苗可刺激自體產生長期主動免疫。" },
+    { stem: "齊多夫定 (Zidovudine / AZT) 治療反轉錄病毒的作用原理為何？", options: ["破壞病毒套膜", "作為胸苷類似物，嵌入 DNA 鏈導致連鎖終止", "結合於宿主 CD4 受體", "抑制病毒顆粒組裝"], answer: "B", exp: "AZT 缺乏 3'-OH 基團，被反轉錄酶嵌入後會造成 DNA 鏈延伸終止。" },
+    { stem: "對 Acyclovir 產生抗藥性之缺 TK 病毒株，可改用何種焦磷酸類似物？", options: ["磷甲酸鈉 (Foscarnet)", "碘苷 (Idoxuridine)", "司他夫定 (Stavudine)", "拉米夫定 (Lamivudine)"], answer: "A", exp: "Foscarnet 不需病毒 TK 活化，可直接抑制 DNA 聚合酶。" }
+  ];
+
+  let currentQuestions = [];
+  let currentIndex = 0;
+  let score = 0;
+
+  function startQuiz() {
+    const count = parseInt(document.getElementById('quiz-count').value) || 10;
+    currentQuestions = [...QUESTIONS].sort(() => Math.random() - 0.5).slice(0, count);
+    currentIndex = 0;
+    score = 0;
+
+    document.getElementById('page-dashboard').classList.add('hidden');
+    document.getElementById('page-quiz').classList.remove('hidden');
+    showQuestion();
+  }
+
+  function showQuestion() {
+    const q = currentQuestions[currentIndex];
+    document.getElementById('quiz-progress-text').innerText = `第 ${currentIndex + 1} 題 / 共 ${currentQuestions.length} 題`;
+    document.getElementById('quiz-score-text').innerText = `目前得分: ${score}`;
+    document.getElementById('progress-fill').style.width = `${((currentIndex + 1) / currentQuestions.length) * 100}%`;
+    document.getElementById('question-stem').innerText = `${currentIndex + 1}. ${q.stem}`;
+    
+    document.getElementById('explanation-box').classList.add('hidden');
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.disabled = true;
+
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+
+    const keys = ['A', 'B', 'C', 'D'];
+    q.options.forEach((opt, idx) => {
+      const key = keys[idx];
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerText = `(${key}) ${opt}`;
+      btn.onclick = () => selectOption(key, btn, q);
+      container.appendChild(btn);
+    });
+  }
+
+  function selectOption(selectedKey, btn, q) {
+    const container = document.getElementById('options-container');
+    const btns = container.querySelectorAll('button');
+    btns.forEach(b => b.disabled = true);
+
+    if (selectedKey === q.answer) {
+      btn.classList.add('correct');
+      score++;
+    } else {
+      btn.classList.add('wrong');
+      const keys = ['A', 'B', 'C', 'D'];
+      btns[keys.indexOf(q.answer)].classList.add('correct');
+    }
+
+    if (q.exp) {
+      document.getElementById('explanation-text').innerText = q.exp;
+      document.getElementById('explanation-box').classList.remove('hidden');
+    }
+
+    document.getElementById('next-btn').disabled = false;
+  }
+
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < currentQuestions.length) {
+      showQuestion();
+    } else {
+      document.getElementById('page-quiz').classList.add('hidden');
+      document.getElementById('page-results').classList.remove('hidden');
+      document.getElementById('final-score').innerText = `${score} / ${currentQuestions.length} 題`;
+    }
+  }
+</script>
+
+</body>
+</html>
